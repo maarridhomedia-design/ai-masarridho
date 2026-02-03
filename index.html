@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Guru: Generator Modul & Soal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .loading-dots:after { content: ' .'; animation: dots 1s steps(5, end) infinite;}
+        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);} 40% { color: #2563eb; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);} 60% { text-shadow: .25em 0 0 #2563eb, .5em 0 0 rgba(0,0,0,0);} 80%, 100% { text-shadow: .25em 0 0 #2563eb, .5em 0 0 #2563eb;}}
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="min-h-screen flex flex-col md:flex-row">
+        <aside class="w-full md:w-96 bg-white border-r border-slate-200 p-6 flex-shrink-0">
+            <div class="flex items-center gap-2 mb-8">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fas fa-robot text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">EduGen AI</h1>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-slate-700">Mata Pelajaran</label>
+                    <input id="mapel" type="text" placeholder="Contoh: Matematika, Biologi" 
+                        class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-slate-700">Fase / Kelas</label>
+                    <select id="fase" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="Fase A (Kelas 1-2)">Fase A (SD 1-2)</option>
+                        <option value="Fase B (Kelas 3-4)">Fase B (SD 3-4)</option>
+                        <option value="Fase C (Kelas 5-6)">Fase C (SD 5-6)</option>
+                        <option value="Fase D (Kelas 7-9)">Fase D (SMP)</option>
+                        <option value="Fase E (Kelas 10)">Fase E (SMA 10)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-slate-700">Topik Materi</label>
+                    <textarea id="topik" rows="3" placeholder="Contoh: Perubahan Wujud Zat" 
+                        class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="setType('modul')" id="btn-modul" class="flex-1 py-2 px-4 rounded-lg border-2 border-blue-600 bg-blue-600 text-white font-medium transition">Modul Ajar</button>
+                    <button onclick="setType('soal')" id="btn-soal" class="flex-1 py-2 px-4 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-medium hover:border-blue-300 transition">Bank Soal</button>
+                </div>
+
+                <button onclick="generateContent()" id="generate-btn" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg shadow-slate-200">
+                    <i class="fas fa-sparkles"></i>
+                    <span>Generate Sekarang</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10">
+            <div id="welcome-state" class="h-full flex flex-col items-center justify-center text-center">
+                <div class="bg-blue-50 text-blue-500 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-file-pen text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Siap Menyusun Administrasi?</h2>
+                <p class="text-slate-500 max-w-sm mx-auto mt-2">Isi formulir di sebelah kiri untuk menghasilkan modul ajar atau soal berbasis AI.</p>
+            </div>
+
+            <div id="loading-state" class="hidden h-full flex flex-col items-center justify-center text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <h2 class="text-xl font-semibold loading-dots text-blue-600">AI sedang berpikir</h2>
+            </div>
+
+            <div id="result-state" class="hidden max-w-3xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-500"></i> Hasil Generasi AI
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="window.print()" class="text-sm bg-white border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">
+                            <i class="fas fa-print mr-1"></i> Cetak/PDF
+                        </button>
+                    </div>
+                </div>
+                <div id="output-box" class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 prose prose-slate max-w-none whitespace-pre-line leading-relaxed italic text-slate-700">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentType = 'modul';
+
+        function setType(type) {
+            currentType = type;
+            const btnModul = document.getElementById('btn-modul');
+            const btnSoal = document.getElementById('btn-soal');
+            
+            if(type === 'modul') {
+                btnModul.className = "flex-1 py-2 px-4 rounded-lg border-2 border-blue-600 bg-blue-600 text-white font-medium";
+                btnSoal.className = "flex-1 py-2 px-4 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-medium";
+            } else {
+                btnSoal.className = "flex-1 py-2 px-4 rounded-lg border-2 border-blue-600 bg-blue-600 text-white font-medium";
+                btnModul.className = "flex-1 py-2 px-4 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-medium";
+            }
+        }
+
+        async function generateContent() {
+            const mapel = document.getElementById('mapel').value;
+            const topik = document.getElementById('topik').value;
+            const fase = document.getElementById('fase').value;
+
+            if(!mapel || !topik) return alert("Mohon lengkapi Mapel dan Topik!");
+
+            // Update UI state
+            document.getElementById('welcome-state').classList.add('hidden');
+            document.getElementById('result-state').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+
+            try {
+                // GANTI URL INI dengan URL Backend Anda (Node.js/Gemini)
+                const response = await fetch('http://localhost:5000/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mapel, topik, fase, tipe: currentType }),
+                });
+
+                const resData = await response.json();
+                
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('result-state').classList.remove('hidden');
+                document.getElementById('output-box').innerText = resData.data;
+                document.getElementById('output-box').classList.remove('italic', 'text-slate-500');
+
+            } catch (error) {
+                console.error(error);
+                alert("Gagal terhubung ke server AI. Pastikan Backend sudah jalan!");
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('welcome-state').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
